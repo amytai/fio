@@ -460,6 +460,8 @@ struct thread_data {
 	CUdeviceptr dev_mem_ptr;
 #endif	
 
+    unsigned long long next_thinktime_blocks;
+
 };
 
 /*

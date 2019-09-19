@@ -863,9 +863,18 @@ static void handle_thinktime(struct thread_data *td, enum fio_ddir ddir)
 	uint64_t total;
 	int left;
 
-	b = ddir_rw_sum(td->io_blocks);
-	if (b % td->o.thinktime_blocks)
+    b = ddir_rw_sum(td->io_issues);
+	if (b != td->next_thinktime_blocks)
 		return;
+
+    // Now reset thinktime to something different
+    do {
+        td->o.thinktime_blocks = __rand(&td->random_state) % td->o.iodepth;
+    } while (td->o.thinktime_blocks == 0);
+    // We also set iodepth_batch to the same as thinktime, since the io engine doesn't even bother to
+    // check for thinktime_blocks until iodepth_batch blocks are submitted
+    td->next_thinktime_blocks += td->o.thinktime_blocks;
+    td->o.iodepth_batch = td->o.thinktime_blocks;
 
 	io_u_quiesce(td);
 
@@ -1061,7 +1070,7 @@ static void do_io(struct thread_data *td, uint64_t *bytes_done)
 
 		} else {
 			ret = io_u_submit(td, io_u);
-
+            
 			if (should_check_rate(td))
 				td->rate_next_io_time[ddir] = usec_for_io(td, ddir);
 
@@ -1079,8 +1088,13 @@ reap:
 			if (full || io_in_polling(td))
 				ret = wait_for_completions(td, &comp_time);
 		}
+
 		if (ret < 0)
 			break;
+        if (ddir_rw_sum(td->io_issues) == td->next_thinktime_blocks) {
+		    if (ddir_rw(ddir) && td->o.thinktime)
+			    handle_thinktime(td, ddir);
+        }
 		if (!ddir_rw_sum(td->bytes_done) &&
 		    !td_ioengine_flagged(td, FIO_NOIO))
 			continue;
@@ -1093,13 +1107,14 @@ reap:
 				break;
 			}
 		}
+
 		if (!in_ramp_time(td) && td->o.latency_target)
 			lat_target_check(td);
 
 		if (ddir_rw(ddir) && td->o.thinktime)
 			handle_thinktime(td, ddir);
 	}
-
+            
 	check_update_rusage(td);
 
 	if (td->trim_entries)
@@ -1209,6 +1224,8 @@ static int init_io_u(struct thread_data *td)
 	struct io_u *io_u;
 	int cl_align, i, max_units;
 	int err;
+
+    td->next_thinktime_blocks = td->o.thinktime_blocks;
 
 	max_units = td->o.iodepth;
 
