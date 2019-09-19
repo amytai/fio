@@ -1,0 +1,17 @@
+[global]
+name=fio-rand-RW
+filename=/dev/nvme0n1
+bs=4K
+rw=randread
+direct=1
+time_based=1
+runtime=20
+group_reporting
+ioengine=libaio
+
+[file1]
+barrier=1
+numjobs=1
+iodepth=256
+iodepth_batch_submit=16
+iodepth_batch_complete=16
