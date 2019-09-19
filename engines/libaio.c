@@ -20,6 +20,10 @@
 #define IOCB_FLAG_HIPRI	(1 << 2)
 #endif
 
+#ifndef IOCB_FLAG_BARRIER
+#define IOCB_FLAG_BARRIER	(1 << 9)
+#endif
+
 #ifndef IOCTX_FLAG_IOPOLL
 #define IOCTX_FLAG_IOPOLL	(1 << 0)
 #endif
@@ -53,6 +57,7 @@ struct libaio_options {
 	void *pad;
 	unsigned int userspace_reap;
 	unsigned int hipri;
+	unsigned int barrier;
 };
 
 static struct fio_option options[] = {
@@ -70,6 +75,15 @@ static struct fio_option options[] = {
 		.lname	= "High Priority",
 		.type	= FIO_OPT_STR_SET,
 		.off1	= offsetof(struct libaio_options, hipri),
+		.help	= "Use polled IO completions",
+		.category = FIO_OPT_C_ENGINE,
+		.group	= FIO_OPT_G_LIBAIO,
+	},
+	{
+		.name	= "barrier",
+		.lname	= "High Priority",
+		.type	= FIO_OPT_STR_SET,
+		.off1	= offsetof(struct libaio_options, barrier),
 		.help	= "Use polled IO completions",
 		.category = FIO_OPT_C_ENGINE,
 		.group	= FIO_OPT_G_LIBAIO,
@@ -271,6 +285,7 @@ static void fio_libaio_queued(struct thread_data *td, struct io_u **io_us,
 
 static int fio_libaio_commit(struct thread_data *td)
 {
+	struct libaio_options *o = td->eo;
 	struct libaio_data *ld = td->io_ops_data;
 	struct iocb **iocbs;
 	struct io_u **io_us;
@@ -286,6 +301,9 @@ static int fio_libaio_commit(struct thread_data *td)
 		nr = min((unsigned int) nr, ld->entries - ld->tail);
 		io_us = ld->io_us + ld->tail;
 		iocbs = ld->iocbs + ld->tail;
+		
+		if (o->barrier)
+			iocbs[nr-1]->u.c.flags |= IOCB_FLAG_BARRIER;
 
 		ret = io_submit(ld->aio_ctx, nr, iocbs);
 		if (ret > 0) {
