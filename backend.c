@@ -868,9 +868,13 @@ static void handle_thinktime(struct thread_data *td, enum fio_ddir ddir)
 		return;
 
     // Now reset thinktime to something different
-    do {
-        td->o.thinktime_blocks = __rand(&td->random_state) % td->o.iodepth;
-    } while (td->o.thinktime_blocks == 0);
+    if (td->o.iodepth == 1)
+        td->o.thinktime_blocks = 1;
+    else {
+        do {
+            td->o.thinktime_blocks = __rand(&td->random_state) % td->o.iodepth;
+        } while (td->o.thinktime_blocks == 0);
+    }
     // We also set iodepth_batch to the same as thinktime, since the io engine doesn't even bother to
     // check for thinktime_blocks until iodepth_batch blocks are submitted
     td->next_thinktime_blocks += td->o.thinktime_blocks;
