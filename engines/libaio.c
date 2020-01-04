@@ -301,6 +301,8 @@ static int fio_libaio_commit(struct thread_data *td)
 		nr = min((unsigned int) nr, ld->entries - ld->tail);
 		io_us = ld->io_us + ld->tail;
 		iocbs = ld->iocbs + ld->tail;
+    
+        //fprintf(stderr, "nr in libaio: %d\n", nr);
 		
 		if (o->barrier)
 			iocbs[nr-1]->u.c.flags |= IOCB_FLAG_BARRIER;
