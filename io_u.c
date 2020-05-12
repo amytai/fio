@@ -976,9 +976,19 @@ static void __io_u_mark_map(uint64_t *map, unsigned int nr)
 	map[idx]++;
 }
 
+static void __io_u_mark_submit(uint64_t *map, unsigned int nr)
+{
+    unsigned int i = nr;
+    if (i >= FIO_IO_U_SUBMIT_HISTOGRAM)
+        i = FIO_IO_U_SUBMIT_HISTOGRAM -1;
+    if (i < 0)
+        i = 0;
+    map[i]++;
+}
+
 void io_u_mark_submit(struct thread_data *td, unsigned int nr)
 {
-	__io_u_mark_map(td->ts.io_u_submit, nr);
+	__io_u_mark_submit(td->ts.io_u_submit, nr);
 	td->ts.total_submit++;
 }
 

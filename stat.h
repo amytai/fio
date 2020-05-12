@@ -24,6 +24,8 @@ struct group_run_stats {
 #define FIO_IO_U_LAT_U_NR 10
 #define FIO_IO_U_LAT_M_NR 12
 
+#define FIO_IO_U_SUBMIT_HISTOGRAM   16
+
 /*
  * Constants for clat percentiles
  */
@@ -183,7 +185,7 @@ struct thread_stat {
 	fio_fp64_t percentile_list[FIO_IO_U_LIST_MAX_LEN];
 
 	uint64_t io_u_map[FIO_IO_U_MAP_NR];
-	uint64_t io_u_submit[FIO_IO_U_MAP_NR];
+	uint64_t io_u_submit[FIO_IO_U_SUBMIT_HISTOGRAM];
 	uint64_t io_u_complete[FIO_IO_U_MAP_NR];
 	uint64_t io_u_lat_n[FIO_IO_U_LAT_N_NR];
 	uint64_t io_u_lat_u[FIO_IO_U_LAT_U_NR];

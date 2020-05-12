@@ -337,6 +337,24 @@ void stat_calc_dist(uint64_t *map, unsigned long total, double *io_u_dist)
 	}
 }
 
+static void stat_calc_dist_submit(uint64_t *map, unsigned long total, double *io_u_dist)
+{
+	int i;
+
+	/*
+	 * Do depth distribution calculations
+	 */
+	for (i = 0; i < FIO_IO_U_SUBMIT_HISTOGRAM; i++) {
+		if (total) {
+			io_u_dist[i] = (double) map[i] / (double) total;
+			io_u_dist[i] *= 100.0;
+			if (io_u_dist[i] < 0.1 && map[i])
+				io_u_dist[i] = 0.1;
+		} else
+			io_u_dist[i] = 0.0;
+	}
+}
+
 static void stat_calc_lat(struct thread_stat *ts, double *dst,
 			  uint64_t *src, int nr)
 {
@@ -789,6 +807,7 @@ static void show_thread_status_normal(struct thread_stat *ts,
 	double usr_cpu, sys_cpu;
 	unsigned long runtime;
 	double io_u_dist[FIO_IO_U_MAP_NR];
+	double io_u_dist_submit[FIO_IO_U_SUBMIT_HISTOGRAM];
 	time_t time_p;
 	char time_buf[32];
 
@@ -850,12 +869,20 @@ static void show_thread_status_normal(struct thread_stat *ts,
 					io_u_dist[3], io_u_dist[4],
 					io_u_dist[5], io_u_dist[6]);
 
-	stat_calc_dist(ts->io_u_submit, ts->total_submit, io_u_dist);
-	log_buf(out, "     submit    : 0=%3.1f%%, 4=%3.1f%%, 8=%3.1f%%, 16=%3.1f%%,"
-		 " 32=%3.1f%%, 64=%3.1f%%, >=64=%3.1f%%\n", io_u_dist[0],
-					io_u_dist[1], io_u_dist[2],
-					io_u_dist[3], io_u_dist[4],
-					io_u_dist[5], io_u_dist[6]);
+	stat_calc_dist_submit(ts->io_u_submit, ts->total_submit, io_u_dist_submit);
+	log_buf(out, "     submit    : 0=%3.1f%%, 1=%3.1f%%, 2=%3.1f%%, 3=%3.1f%%,"
+		 " 4=%3.1f%%, 5=%3.1f%%, 6=%3.1f%%,"
+		 " 7=%3.1f%%, 8=%3.1f%%, 9=%3.1f%%,"
+		 " 10=%3.1f%%, 11=%3.1f%%, 12=%3.1f%%,"
+		 " 13=%3.1f%%, 14=%3.1f%%, >=15=%3.1f%%\n", io_u_dist[0],
+					io_u_dist_submit[1], io_u_dist_submit[2],
+					io_u_dist_submit[3], io_u_dist_submit[4],
+					io_u_dist_submit[5], io_u_dist_submit[6],
+					io_u_dist_submit[7], io_u_dist_submit[8],
+					io_u_dist_submit[9], io_u_dist_submit[10],
+					io_u_dist_submit[11], io_u_dist_submit[12],
+					io_u_dist_submit[13], io_u_dist_submit[14],
+					io_u_dist_submit[15]);
 	stat_calc_dist(ts->io_u_complete, ts->total_complete, io_u_dist);
 	log_buf(out, "     complete  : 0=%3.1f%%, 4=%3.1f%%, 8=%3.1f%%, 16=%3.1f%%,"
 		 " 32=%3.1f%%, 64=%3.1f%%, >=64=%3.1f%%\n", io_u_dist[0],
@@ -1676,9 +1703,12 @@ void sum_thread_stats(struct thread_stat *dst, struct thread_stat *src,
 
 	for (k = 0; k < FIO_IO_U_MAP_NR; k++) {
 		dst->io_u_map[k] += src->io_u_map[k];
-		dst->io_u_submit[k] += src->io_u_submit[k];
 		dst->io_u_complete[k] += src->io_u_complete[k];
 	}
+	for (k = 0; k < FIO_IO_U_SUBMIT_HISTOGRAM; k++) {
+		dst->io_u_submit[k] += src->io_u_submit[k];
+    }
+
 	for (k = 0; k < FIO_IO_U_LAT_N_NR; k++) {
 		dst->io_u_lat_n[k] += src->io_u_lat_n[k];
 		dst->io_u_lat_u[k] += src->io_u_lat_u[k];
