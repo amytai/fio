@@ -15,4 +15,4 @@ hipri=1
 [file1]
 offset=10G
 size=8G
-numjobs=4
+numjobs=2

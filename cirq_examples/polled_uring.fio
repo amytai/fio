@@ -6,7 +6,7 @@ blocksize=4K
 rw=randread
 direct=1
 time_based=1
-runtime=200
+runtime=100
 group_reporting
 ioengine=io_uring
 
@@ -14,9 +14,10 @@ ioengine=io_uring
 offset=10G
 size=400G
 ;barrier=1
-hipri=1
+;hipri=1
 numjobs=1
 iodepth=256
-iodepth_batch_submit=16
-iodepth_batch_complete=16
+;iodepth_batch=4
+;iodepth_batch_submit=4
+;iodepth_batch_complete=4
 
